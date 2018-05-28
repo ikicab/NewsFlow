@@ -82,31 +82,17 @@ def update_neighbours(v, action):
         v["state"] = action
         v_incident["FT"] = [not x for x in v_incident["FT"]]
 
-    #? if action == UPDATE_VERTEX:
-    #?     NFv = v["F_news"]
-    #?     NTv = v["T_news"]
-    #?     v["x"] = (NFv - NTv)/(NFv + NTv)
+    if action == UPDATE_VERTEX:
+        NFv = v["F_news"]
+        NTv = v["T_news"]
+        v["x"] = (NFv - NTv)/(NFv + NTv)
 
     # endpoints of incident edges update their F(x) values
     for incident_edge in v_incident:
-        #? t1 = G.vs[incident_edge.source]
-        #? t2 = G.vs[incident_edge.target]
-        #? s = t1 if t2 == v else t1
-
         s = G.vs[incident_edge.source]
         t = G.vs[incident_edge.target]
 
-        if action == UPDATE_VERTEX:
-            NFs = s["F_news"]
-            NTs = s["T_news"]
-            s["x"] = (NFs - NTs)/(NFs + NTs)
-
-            NFt = t["F_news"]
-            NTt = t["T_news"]
-            t["x"] = (NFt - NTt)/(NFt + NTt)
-
         xs = s["x"]
-        #? xt = v["x"]
         xt = t["x"]
 
         if incident_edge["FT"]:
