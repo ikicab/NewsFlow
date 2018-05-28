@@ -7,6 +7,20 @@ import random
 import igraph as ig
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+
+
+def stopaj(f):
+    def stopana_f(*args, **kwargs):
+        zacetek = time.time()
+        rezultat = f(*args, **kwargs)
+        konec = time.time()
+        print(f.__name__, konec - zacetek)
+        return rezultat
+    return stopana_f
+
+random.seed(12345)
+np.random.seed(12345)
 
 n = 100
 k = 3
@@ -68,22 +82,19 @@ def update_neighbours(v, action):
         v["state"] = action
         v_incident["FT"] = [not x for x in v_incident["FT"]]
 
+    if action == UPDATE_VERTEX:
+        NFv = v["F_news"]
+        NTv = v["T_news"]
+        v["x"] = (NFv - NTv)/(NFv + NTv)
+
     # endpoints of incident edges update their F(x) values
     for incident_edge in v_incident:
-        s = G.vs[incident_edge.source]
-        t = G.vs[incident_edge.target]
-
-        if action == UPDATE_VERTEX:
-            NFs = s["F_news"]
-            NTs = s["T_news"]
-            s["x"] = (NFs - NTs)/(NFs + NTs)
-
-            NFt = t["F_news"]
-            NTt = t["T_news"]
-            t["x"] = (NFt - NTt)/(NFt + NTt)
+        t1 = G.vs[incident_edge.source]
+        t2 = G.vs[incident_edge.target]
+        s = t1 if t2 == v else t1
 
         xs = s["x"]
-        xt = t["x"]
+        xt = v["x"]
 
         if incident_edge["FT"]:
             if action == UPDATE_VERTEX:
@@ -106,6 +117,7 @@ def update_neighbours(v, action):
             sumFx_F -= incident_edge["Fx_F"]
 
 
+@stopaj
 def newsFlow(plot=0):
     """plot - if set to 1, output a plot"""
 
