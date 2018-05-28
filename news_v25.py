@@ -17,6 +17,11 @@ Lambda_T = 1
 Lambda_F = 1.5
 eta = 0.8
 
+CHANGE_TT = 0
+CHANGE_FF = 1
+UPDATE_VERTEX = 2
+
+
 global sumFx_T
 global sumFx_F
 
@@ -42,6 +47,9 @@ G.delete_vertices(G.vs.select(lambda vertex: vertex.degree() == 0))
 N = len(G.vs)
 E = len(G.es)
 
+def is_change(action):
+    return action == CHANGE_TT or action == CHANGE_FF
+
 def update_neighbours(v, action):
     """v - vertex
     action - current action"""
@@ -49,13 +57,13 @@ def update_neighbours(v, action):
     global sumFx_T
     global sumFx_F
 
-    if action in (0, 1):
+    if is_change(action):
         v["state"] = action
 
     # active & inactive incident edges exchange their roles
     v_incident = G.es[G.incident(v)]
 
-    if action in (0, 1):
+    if is_change(action):
         v["state"] = action
         v_incident["FT"] = [1 - x for x in v_incident["FT"]]
 
@@ -64,7 +72,7 @@ def update_neighbours(v, action):
         s = G.vs[incident_edge.source]
         t = G.vs[incident_edge.target]
 
-        if action == 2:
+        if action == UPDATE_VERTEX:
             NFs = s["F_news"]
             NTs = s["T_news"]
             s["x"] = (NFs - NTs)/(NFs + NTs)
@@ -77,7 +85,7 @@ def update_neighbours(v, action):
         xt = t["x"]
 
         if incident_edge["FT"] == 1:
-            if action == 2:
+            if action == UPDATE_VERTEX:
                 sumFx_T -= incident_edge["Fx_T"]
                 sumFx_F -= incident_edge["Fx_F"]
 
@@ -92,7 +100,7 @@ def update_neighbours(v, action):
             sumFx_T += incident_edge["Fx_T"]
             sumFx_F += incident_edge["Fx_F"]
 
-        elif action in (0, 1):
+        elif is_change(action):
             sumFx_T -= incident_edge["Fx_T"]
             sumFx_F -= incident_edge["Fx_F"]
 
@@ -185,9 +193,9 @@ def newsFlow(plot=0):
         # 1: edge becomes FF,
         # 2: node updates its true to false news ratio (T/F += 1 & F/T -=1)
 
-        action = rand_distr([0, 1, 2], [N_Act_TT/N_Act, N_Act_FF/N_Act, N_Act_node/N_Act])
+        action = rand_distr([CHANGE_TT, CHANGE_FF, UPDATE_VERTEX], [N_Act_TT/N_Act, N_Act_FF/N_Act, N_Act_node/N_Act])
 
-        if action == 0:
+        if action == CHANGE_TT:
             # a randomly chosen active edge becomes TT
 
             # select an edge at random, with probability proportional to its F_T(x) value
@@ -204,7 +212,7 @@ def newsFlow(plot=0):
             else: # j updates to T
                 update_neighbours(j, 0)
 
-        elif action == 1:
+        elif action == CHANGE_FF:
             # a randomly chosen active edge becomes FF
 
             # select an edge at random, with probability proportional to its F_F(x) value
@@ -243,7 +251,7 @@ def newsFlow(plot=0):
                     v["F_news"] += 1
 
             # endpoints of incident edges update their F(x) values
-            update_neighbours(v, 2)
+            update_neighbours(v, UPDATE_VERTEX)
 
         FT_edges = G.es.select(FT=1)
         nFT_edges = len(FT_edges)
