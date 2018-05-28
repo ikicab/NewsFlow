@@ -61,9 +61,6 @@ def update_neighbours(v, action):
     global sumFx_T
     global sumFx_F
 
-    if is_change(action):
-        v["state"] = action
-
     # active & inactive incident edges exchange their roles
     v_incident = G.es[G.incident(v)]
 
@@ -213,10 +210,10 @@ def newsFlow(plot=0):
             j = G.vs[edge.target]
 
             if i["state"] == 1:  # i updates to T
-                update_neighbours(i, 0)
+                update_neighbours(i, CHANGE_TT)
 
             else:  # j updates to T
-                update_neighbours(j, 0)
+                update_neighbours(j, CHANGE_TT)
 
         elif action == CHANGE_FF:
             # a randomly chosen active edge becomes FF
@@ -230,10 +227,10 @@ def newsFlow(plot=0):
             j = G.vs[edge.target]
 
             if i["state"] == 0:  # i updates to F
-                update_neighbours(i, 1)
+                update_neighbours(i, CHANGE_FF)
 
             else:  # j updates to F
-                update_neighbours(j, 1)
+                update_neighbours(j, CHANGE_FF)
 
         else:
             # a node updates its true to false media outlet ratio (T/F += 1 & F/T -=1)
