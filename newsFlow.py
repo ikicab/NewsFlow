@@ -69,7 +69,7 @@ def update_neighbours(v, action):
 
     if is_change(action):
         v["state"] = action
-        v_incident["FT"] = [1 - x for x in v_incident["FT"]]
+        v_incident["FT"] = [not x for x in v_incident["FT"]]
 
     # endpoints of incident edges update their F(x) values
     for incident_edge in v_incident:
@@ -88,7 +88,7 @@ def update_neighbours(v, action):
         xs = s["x"]
         xt = t["x"]
 
-        if incident_edge["FT"] == 1:
+        if incident_edge["FT"]:
             if action == UPDATE_VERTEX:
                 sumFx_T -= incident_edge["Fx_T"]
                 sumFx_F -= incident_edge["Fx_F"]
@@ -145,10 +145,10 @@ def newsFlow(plot=0):
         j = G.vs[edge.target]
 
         if i["state"] == j["state"]:
-            edge["FT"] = 0  # the endpoints of the edge correspond to same states
+            edge["FT"] = False  # the endpoints of the edge correspond to same states
 
         else:
-            edge["FT"] = 1  # the endpoints of the edge correspond to different states
+            edge["FT"] = True  # the endpoints of the edge correspond to different states
 
             xi = i["x"]
             xj = j["x"]
@@ -162,7 +162,7 @@ def newsFlow(plot=0):
                 edge["Fx_T"] = 1/2 * (-xi + 1)  # probability of transitioning to TT
 
     # number of FT (imbalanced/active) edges
-    FT_edges = G.es.select(FT=1)
+    FT_edges = G.es.select(FT=True)
     nFT_edges = len(FT_edges)
 
     sumFx_T = sum(FT_edges["Fx_T"])
