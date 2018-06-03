@@ -4,11 +4,10 @@
 """
 
 import random
+import time
 import igraph as ig
 import numpy as np
 import matplotlib.pyplot as plt
-import time
-
 
 def stopaj(f):
     def stopana_f(*args, **kwargs):
@@ -22,51 +21,49 @@ def stopaj(f):
 random.seed(12345)
 np.random.seed(12345)
 
-n = 100
-k = 3
-M = 100
+N_VERT = 100
+DEG = 3
+MEDIA = 100
 F0 = 50
-t_max = 100
-Lambda_T = 1
-Lambda_F = 1.5
-eta = 0.8
+T_MAX = 100
+LAMBDA_T = 1
+LAMBDA_F = 1.5
+ETA = 0.8
 
 CHANGE_TT = 0
 CHANGE_FF = 1
 UPDATE_VERTEX = 2
 
+sumFx_T = 0
+sumFx_F = 0
+time_range = []
 
-global sumFx_T
-global sumFx_F
+def rand_distr(items, prob):
+    """
+    Returns 
+    items - items to randomly choose from
+    p - corresponding probabilities
+    """
 
-
-def rand_distr(items, p):
-    """items - items to randomly choose from
-    p - corresponding probabilities"""
-
-    r = random.random()
-    s = 0
+    rand = random.random()
+    pbin = 0
     l = len(items)
     i = 0
     for i in range(l):
-        s += p[i]
-        if s >= r:
+        pbin += prob[i]
+        if pbin >= rand:
             return items[i]
     return items[i]
 
-
-global G
-G = ig.Graph.Barabasi(n, k, power=-3)
+G = ig.Graph.Barabasi(N_VERT, DEG, power=-3)
 G.simplify()
 G.delete_vertices(G.vs.select(lambda vertex: vertex.degree() == 0))
 
 N = len(G.vs)
 E = len(G.es)
 
-
 def is_change(action):
     return action == CHANGE_TT or action == CHANGE_FF
-
 
 def update_neighbours(v, action):
     """v - vertex
@@ -79,7 +76,7 @@ def update_neighbours(v, action):
     v_incident = G.es[G.incident(v)]
 
     if is_change(action):
-        v["state"] = action
+        v["state"] = bool(action)
         v_incident["FT"] = [not x for x in v_incident["FT"]]
 
     if action == UPDATE_VERTEX:
@@ -100,13 +97,13 @@ def update_neighbours(v, action):
                 sumFx_T -= incident_edge["Fx_T"]
                 sumFx_F -= incident_edge["Fx_F"]
 
-            if s["state"] == 0:
-                incident_edge["Fx_F"] = 1/2 * (xs + 1)  # probability of transitioning to FF
-                incident_edge["Fx_T"] = 1/2 * (-xt + 1)  # probability of transitioning to TT
-
-            else:
+            if s["state"]:
                 incident_edge["Fx_F"] = 1/2 * (xt + 1)  # probability of transitioning to FF
                 incident_edge["Fx_T"] = 1/2 * (-xs + 1)  # probability of transitioning to TT
+
+            else:
+                incident_edge["Fx_F"] = 1/2 * (xs + 1)  # probability of transitioning to FF
+                incident_edge["Fx_T"] = 1/2 * (-xt + 1)  # probability of transitioning to TT
 
             sumFx_T += incident_edge["Fx_T"]
             sumFx_F += incident_edge["Fx_F"]
@@ -115,6 +112,12 @@ def update_neighbours(v, action):
             sumFx_T -= incident_edge["Fx_T"]
             sumFx_F -= incident_edge["Fx_F"]
 
+def sub_plot(k, data, msg):
+    plt.subplot(2, 2, k)
+    plt.plot(time_range, data)
+    plt.xlabel(r'$t$')
+    plt.ylabel(msg)
+    plt.tight_layout()
 
 @stopaj
 def newsFlow(plot=0):
@@ -122,26 +125,28 @@ def newsFlow(plot=0):
 
     global sumFx_T
     global sumFx_F
-
+    global time_range
+    
     list_rhoF = []  # density of false news followers
     list_one_media = []  # number of people following only either true or false media
     list_FT_edges = []  # density of FT (active) edges
     list_iter = []  # iteration step
 
     # initialise the amount of true/false media outlets an individual follows
-    T_news = np.random.randint(1, M+1, size=N)
-    F_news = np.random.randint(1, M+1, size=N)
+    T_news = np.random.randint(1, MEDIA+1, size=N)
+    F_news = np.random.randint(1, MEDIA+1, size=N)
 
     G.vs["T_news"] = np.ndarray.tolist(T_news)
     G.vs["F_news"] = np.ndarray.tolist(F_news)
     G.vs["x"] = [(v["F_news"] - v["T_news"])/(v["F_news"] + v["T_news"]) for v in G.vs]
 
     # states of nodes: T (0), F (1)
-    G.vs["state"] = 0  # start with an all-true state
+    G.vs["state"] = False  # start with an all-true state
 
     # introduce a few false states
     rF0 = np.ndarray.tolist(np.random.choice(range(N), size=F0, replace=0))
-    G.vs[rF0]["state"] = 1
+    G.vs[rF0]["state"] = True
+    rhoF = len([v for v in G.vs if v["state"]])
 
     # in action 3, each vertex is chosen uniformly at random
     prob_v = np.empty(N)
@@ -161,13 +166,13 @@ def newsFlow(plot=0):
             xi = i["x"]
             xj = j["x"]
 
-            if i["state"] == 0:
-                edge["Fx_F"] = 1/2 * (xi + 1)  # probability of transitioning to FF
-                edge["Fx_T"] = 1/2 * (-xj + 1)  # probability of transitioning to TT
-
-            else:
+            if i["state"]:
                 edge["Fx_F"] = 1/2 * (xj + 1)  # probability of transitioning to FF
                 edge["Fx_T"] = 1/2 * (-xi + 1)  # probability of transitioning to TT
+
+            else:
+                edge["Fx_F"] = 1/2 * (xi + 1)  # probability of transitioning to FF
+                edge["Fx_T"] = 1/2 * (-xj + 1)  # probability of transitioning to TT
 
     # number of FT (imbalanced/active) edges
     FT_edges = G.es.select(FT=True)
@@ -180,9 +185,9 @@ def newsFlow(plot=0):
     Fx_T_avg = sumFx_T/nFT_edges
 
     # compute the number of actions
-    N_Act_TT = nFT_edges * Lambda_T * Fx_T_avg  # an active edge (FT) updates to a TT edge
-    N_Act_FF = nFT_edges * Lambda_F * Fx_F_avg  # an active edge (FT) updates to a FF edge
-    N_Act_node = N * eta  # a node updates the amount of true/false media it follows
+    N_Act_TT = nFT_edges * LAMBDA_T * Fx_T_avg  # an active edge (FT) updates to a TT edge
+    N_Act_FF = nFT_edges * LAMBDA_F * Fx_F_avg  # an active edge (FT) updates to a FF edge
+    N_Act_node = N * ETA  # a node updates the amount of true/false media it follows
     N_Act = N_Act_TT + N_Act_FF + N_Act_node  # total number of actions
 
     time_range = []  # time span
@@ -190,27 +195,29 @@ def newsFlow(plot=0):
     t_step = 0  # time elapsed at current step
     step = 0  # counting the number of iterations realised
 
-    if plot == 1:
+    if plot:
         time_range.append(t_step)
         list_one_media.append(len([v for v in G.vs if v["T_news"] == 0 or v["F_news"] == 0]))
-        list_rhoF.append(len([v for v in G.vs if v["state"] == 1])/N)
+        list_rhoF.append(rhoF/N)
         list_FT_edges.append(nFT_edges/E)
         list_iter.append(step)
 
     # display current number of FT (active) edges
     #print("nFT_edges:", nFT_edges)
 
-    while t_step <= t_max:
+    test = 0
+    while t_step <= T_MAX:
         # choose a random action:
         # 0: edge becomes TT,
         # 1: edge becomes FF,
         # 2: node updates its true to false news ratio (T/F += 1 & F/T -=1)
 
         action = rand_distr([CHANGE_TT, CHANGE_FF, UPDATE_VERTEX], [
-                            N_Act_TT/N_Act, N_Act_FF/N_Act, N_Act_node/N_Act])
+            N_Act_TT/N_Act, N_Act_FF/N_Act, N_Act_node/N_Act])
 
         if action == CHANGE_TT:
             # a randomly chosen active edge becomes TT
+            rhoF -= 1
 
             # select an edge at random, with probability proportional to its F_T(x) value
             p = [f/sumFx_T for f in FT_edges["Fx_T"]]
@@ -220,7 +227,7 @@ def newsFlow(plot=0):
             i = G.vs[edge.source]
             j = G.vs[edge.target]
 
-            if i["state"] == 1:  # i updates to T
+            if i["state"]:  # i updates to T
                 update_neighbours(i, CHANGE_TT)
 
             else:  # j updates to T
@@ -228,6 +235,7 @@ def newsFlow(plot=0):
 
         elif action == CHANGE_FF:
             # a randomly chosen active edge becomes FF
+            rhoF += 1
 
             # select an edge at random, with probability proportional to its F_F(x) value
             p = [f/sumFx_F for f in FT_edges["Fx_F"]]
@@ -237,11 +245,11 @@ def newsFlow(plot=0):
             i = G.vs[edge.source]
             j = G.vs[edge.target]
 
-            if i["state"] == 0:  # i updates to F
-                update_neighbours(i, CHANGE_FF)
-
-            else:  # j updates to F
+            if i["state"]: # j updates to F
                 update_neighbours(j, CHANGE_FF)
+
+            else: # i updates to F
+                update_neighbours(i, CHANGE_FF)
 
         else:
             # a node updates its true to false media outlet ratio (T/F += 1 & F/T -=1)
@@ -251,18 +259,18 @@ def newsFlow(plot=0):
             v = G.vs[v_ind]
 
             # if v is in T state: T_news += 1, F_news -= 1
-            if v["state"] == 0:
-                if v["T_news"] < M:
-                    v["T_news"] += 1
-                if v["F_news"] > 0:
-                    v["F_news"] -= 1
+            if v["state"]:
+                if v["T_news"] > 0:
+                    v["T_news"] -= 1
+                if v["F_news"] < MEDIA:
+                    v["F_news"] += 1
 
             # if v is in F state: F_news += 1, T_news -= 1
             else:
-                if v["T_news"] > 0:
-                    v["T_news"] -= 1
-                if v["F_news"] < M:
-                    v["F_news"] += 1
+                if v["T_news"] < MEDIA:
+                    v["T_news"] += 1
+                if v["F_news"] > 0:
+                    v["F_news"] -= 1
 
             # endpoints of incident edges update their F(x) values
             update_neighbours(v, UPDATE_VERTEX)
@@ -286,21 +294,24 @@ def newsFlow(plot=0):
         step += 1
 
         # update the number of actions
-        N_Act_TT = nFT_edges * Lambda_T * Fx_T_avg
-        N_Act_FF = nFT_edges * Lambda_F * Fx_F_avg
-        N_Act_node = N * eta
+        N_Act_TT = nFT_edges * LAMBDA_T * Fx_T_avg
+        N_Act_FF = nFT_edges * LAMBDA_F * Fx_F_avg
+        N_Act_node = N * ETA
         N_Act = N_Act_TT + N_Act_FF + N_Act_node  # number of actions
 
-        if plot == 1:
+        if plot:
             # update the data
             t_step += 1/N_Act
             time_range.append(t_step)
+            t1 = time.time()
             list_one_media.append(len([v for v in G.vs if v["T_news"] == 0 or v["F_news"] == 0]))
-            list_rhoF.append(len([v for v in G.vs if v["state"] == 1])/N)
+            t2 = time.time()
+            list_rhoF.append(rhoF/N)
             list_FT_edges.append(nFT_edges/E)
             list_iter.append(step)
+        test += t2-t1
 
-    if t_step >= t_max:
+    if t_step >= T_MAX:
         print("Max time step exceeded.")
 
     if plot == 1:
@@ -308,39 +319,18 @@ def newsFlow(plot=0):
         plt.tight_layout()
         plt.figure(figsize=(8, 8))
         plt.suptitle(r'$N =$ %s, $F_0 =$ %s, $M =$ %s, $\eta =$ %s, $\lambda_F =$ %s' %
-                     (N, F0, 2*M, eta, Lambda_F), y=1.01)
+                     (N, F0, 2*MEDIA, ETA, LAMBDA_F), y=1.01)
         plt.tight_layout()
 
-        # plotting the number of people who only listen to one type of media over time
-        plt.subplot(2, 2, 1)
-        plt.plot(time_range, list_one_media)
-        plt.xlabel(r'$t$')
-        plt.ylabel('# people only following T/F news')
-        plt.tight_layout()
-
-        # plotting the density of false news followers over time
-        plt.subplot(2, 2, 2)
-        plt.plot(time_range, list_rhoF)
-        plt.xlabel(r'$t$')
-        plt.ylabel(r'$\rho_F$')
-        plt.tight_layout()
-
-        # plotting the density of FT (active) edges over time
-        plt.subplot(2, 2, 3)
-        plt.plot(time_range, list_FT_edges)
+        sub_plot(1, list_one_media, '# people only following T/F news')
+        sub_plot(2, list_rhoF, r'$\rho_F$')
+        sub_plot(3, list_FT_edges, r'$\rho_{FT}$')
         plt.ylim((0, 1))
-        plt.xlabel(r'$t$')
-        plt.ylabel(r'$\rho_{FT}$')
-        plt.tight_layout()
+        sub_plot(4, list_iter, '# iter')
 
-        # plotting the number of iterations over time
-        plt.subplot(2, 2, 4)
-        plt.plot(time_range, list_iter)
-        plt.xlabel(r'$t$')
-        plt.ylabel('# iter')
-        plt.tight_layout()
+    print("plot", test)
 
-    return len([v for v in G.vs if v["state"] == 1])/N
+    return len([v for v in G.vs if v["state"]])/N
 
 #list_lambda_F = [x * 0.5 for x in range(0,10)]
 # for lambda_F in list_lambda_F:
