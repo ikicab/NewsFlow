@@ -276,17 +276,7 @@ def newsFlow(plot=0):
         action = rand_distr([CHANGE_TT, CHANGE_FF, UPDATE_VERTEX], [
             N_Act_TT/N_Act, N_Act_FF/N_Act, N_Act_node/N_Act])
 
-#        update(action)
-        if action == CHANGE_TT:
-            update_edge(action, sumFx_T, FT_edges["Fx_T"])
-            rhoF -= 1
-
-        elif action == CHANGE_FF:
-            update_edge(action, sumFx_F, FT_edges["Fx_F"])
-            rhoF += 1
-
-        else:
-            update_vertex()
+        update(action)
 
         FT_edges = G.es.select(FT=1)
         nFT_edges = len(FT_edges)
