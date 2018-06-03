@@ -112,6 +112,21 @@ def update_neighbours(v, action):
             sumFx_T -= incident_edge["Fx_T"]
             sumFx_F -= incident_edge["Fx_F"]
 
+def update_edge(action, sumFx, Fx_values):
+    # select an edge at random, with probability proportional to its F(x) value
+    p = [f/sumFx for f in Fx_values]
+    e_ind = rand_distr(range(nFT_edges), p)
+    edge = FT_edges[e_ind]
+
+    i = G.vs[edge.source]
+    j = G.vs[edge.target]
+
+    if i["state"] != action:
+        update_neighbours(i, action)
+
+    else:
+        update_neighbours(j, action)
+        
 def sub_plot(k, data, msg):
     plt.subplot(2, 2, k)
     plt.plot(time_range, data)
@@ -126,6 +141,8 @@ def newsFlow(plot=0):
     global sumFx_T
     global sumFx_F
     global time_range
+    global FT_edges
+    global nFT_edges
     
     list_rhoF = []  # density of false news followers
     list_one_media = []  # number of people following only either true or false media
@@ -216,40 +233,12 @@ def newsFlow(plot=0):
             N_Act_TT/N_Act, N_Act_FF/N_Act, N_Act_node/N_Act])
 
         if action == CHANGE_TT:
-            # a randomly chosen active edge becomes TT
+            update_edge(action, sumFx_T, FT_edges["Fx_T"])
             rhoF -= 1
 
-            # select an edge at random, with probability proportional to its F_T(x) value
-            p = [f/sumFx_T for f in FT_edges["Fx_T"]]
-            e_ind = rand_distr(range(nFT_edges), p)
-            edge = FT_edges[e_ind]
-
-            i = G.vs[edge.source]
-            j = G.vs[edge.target]
-
-            if i["state"]:  # i updates to T
-                update_neighbours(i, CHANGE_TT)
-
-            else:  # j updates to T
-                update_neighbours(j, CHANGE_TT)
-
         elif action == CHANGE_FF:
-            # a randomly chosen active edge becomes FF
+            update_edge(action, sumFx_F, FT_edges["Fx_F"])
             rhoF += 1
-
-            # select an edge at random, with probability proportional to its F_F(x) value
-            p = [f/sumFx_F for f in FT_edges["Fx_F"]]
-            e_ind = rand_distr(range(nFT_edges), p)
-            edge = FT_edges[e_ind]
-
-            i = G.vs[edge.source]
-            j = G.vs[edge.target]
-
-            if i["state"]: # j updates to F
-                update_neighbours(j, CHANGE_FF)
-
-            else: # i updates to F
-                update_neighbours(i, CHANGE_FF)
 
         else:
             # a node updates its true to false media outlet ratio (T/F += 1 & F/T -=1)
