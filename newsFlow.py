@@ -21,10 +21,10 @@ def stopaj(f):
 random.seed(12345)
 np.random.seed(12345)
 
-N_VERT = 100
+N_VERT = 1000
 DEG = 3
 MEDIA = 100
-F0 = 50
+F0 = 500
 T_MAX = 100
 LAMBDA_T = 1
 LAMBDA_F = 1.5
@@ -37,10 +37,12 @@ UPDATE_VERTEX = 2
 sumFx_T = 0
 sumFx_F = 0
 time_range = []
+rhoF = 0
+FT_edges = []
+nFT_edges = 0
 
 def rand_distr(items, prob):
     """
-    Returns 
     items - items to randomly choose from
     p - corresponding probabilities
     """
@@ -157,6 +159,28 @@ def sub_plot(k, data, msg):
     plt.ylabel(msg)
     plt.tight_layout()
 
+action_dict = {CHANGE_TT : update_edge,
+               CHANGE_FF : update_edge,
+               UPDATE_VERTEX : update_vertex}
+
+def update(action):
+    global sumFx_T
+    global sumFx_F
+    global rhoF
+
+    if action == 0:
+        rhoF -= 1
+    elif action == 1:
+        rhoF += 1
+
+    param_dict = {
+        CHANGE_TT : {'action' : CHANGE_TT, 'sumFx' : sumFx_T, 'Fx_values' : FT_edges["Fx_T"]},
+        CHANGE_FF : {'action' : CHANGE_FF, 'sumFx' : sumFx_F, 'Fx_values' : FT_edges["Fx_F"]},
+        UPDATE_VERTEX : {}
+        }
+
+    return action_dict[action](**param_dict[action])
+
 @stopaj
 def newsFlow(plot=0):
     """plot - if set to 1, output a plot"""
@@ -166,7 +190,8 @@ def newsFlow(plot=0):
     global time_range
     global FT_edges
     global nFT_edges
-    
+    global rhoF
+
     list_rhoF = []  # density of false news followers
     list_one_media = []  # number of people following only either true or false media
     list_FT_edges = []  # density of FT (active) edges
@@ -251,6 +276,7 @@ def newsFlow(plot=0):
         action = rand_distr([CHANGE_TT, CHANGE_FF, UPDATE_VERTEX], [
             N_Act_TT/N_Act, N_Act_FF/N_Act, N_Act_node/N_Act])
 
+#        update(action)
         if action == CHANGE_TT:
             update_edge(action, sumFx_T, FT_edges["Fx_T"])
             rhoF -= 1
@@ -286,9 +312,9 @@ def newsFlow(plot=0):
         N_Act_node = N * ETA
         N_Act = N_Act_TT + N_Act_FF + N_Act_node  # number of actions
 
+        t_step += 1/N_Act
+
         if plot:
-            # update the data
-            t_step += 1/N_Act
             time_range.append(t_step)
             t1 = time.time()
             list_one_media.append(len([v for v in G.vs if v["T_news"] == 0 or v["F_news"] == 0]))
@@ -296,12 +322,12 @@ def newsFlow(plot=0):
             list_rhoF.append(rhoF/N)
             list_FT_edges.append(nFT_edges/E)
             list_iter.append(step)
-        test += t2-t1
+            test += t2-t1
 
     if t_step >= T_MAX:
         print("Max time step exceeded.")
 
-    if plot == 1:
+    if plot:
         # visualising the simulation data
         plt.tight_layout()
         plt.figure(figsize=(8, 8))
