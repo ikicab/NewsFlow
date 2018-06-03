@@ -126,7 +126,30 @@ def update_edge(action, sumFx, Fx_values):
 
     else:
         update_neighbours(j, action)
-        
+
+# in action 3, each vertex is chosen uniformly at random
+prob_v = np.empty(N)
+prob_v.fill(1/N)
+
+def update_vertex():
+    v_ind = rand_distr(range(N), prob_v)
+    v = G.vs[v_ind]
+
+    if v["state"]:
+        if v["T_news"] > 0:
+            v["T_news"] -= 1
+        if v["F_news"] < MEDIA:
+            v["F_news"] += 1
+
+    else:
+        if v["T_news"] < MEDIA:
+            v["T_news"] += 1
+        if v["F_news"] > 0:
+            v["F_news"] -= 1
+
+    # endpoints of incident edges update their F(x) values
+    update_neighbours(v, UPDATE_VERTEX)
+
 def sub_plot(k, data, msg):
     plt.subplot(2, 2, k)
     plt.plot(time_range, data)
@@ -164,10 +187,6 @@ def newsFlow(plot=0):
     rF0 = np.ndarray.tolist(np.random.choice(range(N), size=F0, replace=0))
     G.vs[rF0]["state"] = True
     rhoF = len([v for v in G.vs if v["state"]])
-
-    # in action 3, each vertex is chosen uniformly at random
-    prob_v = np.empty(N)
-    prob_v.fill(1/N)
 
     # characterise edges according to their endpoints
     for edge in G.es:
@@ -241,28 +260,7 @@ def newsFlow(plot=0):
             rhoF += 1
 
         else:
-            # a node updates its true to false media outlet ratio (T/F += 1 & F/T -=1)
-
-            # select a vertex at random
-            v_ind = rand_distr(range(N), prob_v)
-            v = G.vs[v_ind]
-
-            # if v is in T state: T_news += 1, F_news -= 1
-            if v["state"]:
-                if v["T_news"] > 0:
-                    v["T_news"] -= 1
-                if v["F_news"] < MEDIA:
-                    v["F_news"] += 1
-
-            # if v is in F state: F_news += 1, T_news -= 1
-            else:
-                if v["T_news"] < MEDIA:
-                    v["T_news"] += 1
-                if v["F_news"] > 0:
-                    v["F_news"] -= 1
-
-            # endpoints of incident edges update their F(x) values
-            update_neighbours(v, UPDATE_VERTEX)
+            update_vertex()
 
         FT_edges = G.es.select(FT=1)
         nFT_edges = len(FT_edges)
