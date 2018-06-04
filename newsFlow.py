@@ -8,6 +8,7 @@ import time
 import igraph as ig
 import numpy as np
 import matplotlib.pyplot as plt
+from contextlib import contextmanager
 
 def stopaj(f):
     def stopana_f(*args, **kwargs):
@@ -18,13 +19,23 @@ def stopaj(f):
         return rezultat
     return stopana_f
 
+porabljen_cas = {}
+
+@contextmanager
+def stopaj_blok(oznaka):
+    zacetek = time.time()
+    yield
+    konec = time.time()
+    porabljen_cas[oznaka] = porabljen_cas.get(oznaka, 0) + konec - zacetek
+    
+
 random.seed(12345)
 np.random.seed(12345)
 
-N_VERT = 1000
+N_VERT = 100
 DEG = 3
 MEDIA = 100
-F0 = 500
+F0 = 50
 T_MAX = 100
 LAMBDA_T = 1
 LAMBDA_F = 1.5
@@ -235,7 +246,7 @@ def newsFlow(plot=0):
                 edge["Fx_F"] = 1/2 * (xi + 1)  # probability of transitioning to FF
                 edge["Fx_T"] = 1/2 * (-xj + 1)  # probability of transitioning to TT
 
-    # number of FT (imbalanced/active) edges
+    # number of FT (imbalanced/active) edge
     FT_edges = G.es.select(FT=True)
     nFT_edges = len(FT_edges)
 
@@ -278,8 +289,12 @@ def newsFlow(plot=0):
 
         update(action)
 
-        FT_edges = G.es.select(FT=1)
-        nFT_edges = len(FT_edges)
+        t1 = time.time()
+        with stopaj_blok('izbira FT'):
+            FT_edges = G.es.select(FT=1)
+            nFT_edges = len(FT_edges)
+        t2 = time.time()
+        test += t2-t1
 
         if nFT_edges == 0:
             step -= 1
@@ -307,7 +322,8 @@ def newsFlow(plot=0):
         if plot:
             time_range.append(t_step)
             t1 = time.time()
-            list_one_media.append(len([v for v in G.vs if v["T_news"] == 0 or v["F_news"] == 0]))
+            with stopaj_blok('poslusajo'):
+                list_one_media.append(len([v for v in G.vs if v["T_news"] == 0 or v["F_news"] == 0]))
             t2 = time.time()
             list_rhoF.append(rhoF/N)
             list_FT_edges.append(nFT_edges/E)
@@ -332,8 +348,10 @@ def newsFlow(plot=0):
         sub_plot(4, list_iter, '# iter')
 
     print("plot", test)
+    print(porabljen_cas)
 
     return len([v for v in G.vs if v["state"]])/N
+
 
 #list_lambda_F = [x * 0.5 for x in range(0,10)]
 # for lambda_F in list_lambda_F:
