@@ -170,28 +170,6 @@ def sub_plot(k, data, msg):
     plt.ylabel(msg)
     plt.tight_layout()
 
-action_dict = {CHANGE_TT : update_edge,
-               CHANGE_FF : update_edge,
-               UPDATE_VERTEX : update_vertex}
-
-def update(action):
-    global sumFx_T
-    global sumFx_F
-    global rhoF
-
-    if action == 0:
-        rhoF -= 1
-    elif action == 1:
-        rhoF += 1
-
-    param_dict = {
-        CHANGE_TT : {'action' : CHANGE_TT, 'sumFx' : sumFx_T, 'Fx_values' : FT_edges["Fx_T"]},
-        CHANGE_FF : {'action' : CHANGE_FF, 'sumFx' : sumFx_F, 'Fx_values' : FT_edges["Fx_F"]},
-        UPDATE_VERTEX : {}
-        }
-
-    return action_dict[action](**param_dict[action])
-
 @stopaj
 def newsFlow(plot=0):
     """plot - if set to 1, output a plot"""
@@ -287,7 +265,14 @@ def newsFlow(plot=0):
         action = rand_distr([CHANGE_TT, CHANGE_FF, UPDATE_VERTEX], [
             N_Act_TT/N_Act, N_Act_FF/N_Act, N_Act_node/N_Act])
 
-        update(action)
+        if action == 0:
+            rhoF -= 1
+            update_edge(CHANGE_TT, sumFx_T, FT_edges["Fx_T"])
+        elif action == 1:
+            update_edge(CHANGE_FF, sumFx_F, FT_edges["Fx_F"])
+            rhoF += 1
+        else:
+            update_vertex()
 
         t1 = time.time()
         with stopaj_blok('izbira FT'):
