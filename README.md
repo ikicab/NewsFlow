@@ -1,12 +1,16 @@
 # NewsFlow
 
-A co-evolving multilayer model of the flow of the news. 
+<img width="400" src="Figures/NewsFlow.svg" align="right">
 
-<p align="center">
-  <img width="500" src="multilayer_NewsFlow.png">
-</p>
+A co-evolving multilayer model of the flow of the news.
 
 For further details about the model, its implementation, advantages and limitations, and empirical results, please refer to the original paper [[1]](#1).
+
+## Model and implementation
+
+<p align="center">
+  <img width="600" src="Figures/NewsFlow.gif">
+</p>
 
 ## Prerequisites
 The packages [`python-igraph`](https://igraph.org/python/) (version 0.7.1) and [`cyrandom`](https://pypi.org/project/cyrandom/) (version 0.3.1) must be installed in order to run the `NewsFlow`, which can be easily done with the [`pip`](https://pip.pypa.io/en/stable/) command:
