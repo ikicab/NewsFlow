@@ -69,6 +69,6 @@ See the [Tutorial](https://nbviewer.jupyter.org/github/ikicab/NewsFlow/blob/mast
 
 ## References
 <a id="1">[1]</a>
-[1] *In preparation*.
+*In preparation*.
 
 The figure above was prepared with the [`LaTeX`](https://www.latex-project.org/) drawing package [`tikz-network`](https://github.com/hackl/tikz-network).
