@@ -6,7 +6,7 @@ A co-evolving multilayer model of the flow of the news.
   <img width="500" src="multilayer_NewsFlow.png">
 </p>
 
-For further details about the model, its implementation, advantages and limitations, and empirical results, please refer to the original paper [1].
+For further details about the model, its implementation, advantages and limitations, and empirical results, please refer to the original paper [[1]](#1).
 
 ## Prerequisites
 The packages [`python-igraph`](https://igraph.org/python/) (version 0.7.1) and [`cyrandom`](https://pypi.org/project/cyrandom/) (version 0.3.1) must be installed in order to run the `NewsFlow`, which can be easily done with the [`pip`](https://pip.pypa.io/en/stable/) command:
@@ -68,6 +68,7 @@ A selection of dedicated visualisation tools may be found in the accompanying `P
 See the [Tutorial](https://nbviewer.jupyter.org/github/ikicab/NewsFlow/blob/master/Tutorial.ipynb) for more help and examples.
 
 ## References
+<a id="1">[1]</a>
 [1] *In preparation*.
 
 The figure above was prepared with the [`LaTeX`](https://www.latex-project.org/) drawing package [`tikz-network`](https://github.com/hackl/tikz-network).
