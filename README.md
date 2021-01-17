@@ -73,6 +73,6 @@ See the [Tutorial](https://nbviewer.jupyter.org/github/ikicab/NewsFlow/blob/mast
 
 ## References
 <a id="1">[1]</a>
-*In preparation*.
+B. Ikica, _Co-evolution of the Multilayer News Flow. In preparation; a detailed overview can be found [here](https://repozitorij.uni-lj.si/IzpisGradiva.php?id=113311&lang=eng) (refer to pages 161–199)._
 
 The figure above was prepared with the [`LaTeX`](https://www.latex-project.org/) drawing package [`tikz-network`](https://github.com/hackl/tikz-network).
